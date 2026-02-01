@@ -8,97 +8,294 @@
     <script src="https://unpkg.com/mammoth@1.6.0/mammoth.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { /* 同上一版主题变量 */ }
-        [data-theme="light"] { /* 同上一版 */ }
-        body { /* 同上一版 */ }
-        /* 所有样式保持上一版优化布局 */
-        /* ...（复制上一版的完整样式） */
+        :root {
+            --bg: #000000;
+            --panel-bg: rgba(20, 20, 35, 0.92);
+            --text: #e0e0ff;
+            --accent: rgba(100, 100, 255, 0.25);
+            --button-bg: rgba(50, 50, 100, 0.7);
+            --button-hover: rgba(120, 120, 255, 0.9);
+            --shadow: rgba(0,0,0,0.8);
+        }
+        [data-theme="light"] {
+            --bg: #f5f5f5;
+            --panel-bg: rgba(255, 255, 255, 0.92);
+            --text: #333333;
+            --accent: rgba(100, 100, 255, 0.25);
+            --button-bg: rgba(200, 200, 255, 0.7);
+            --button-hover: rgba(120, 120, 255, 0.9);
+            --shadow: rgba(0,0,0,0.2);
+        }
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            transition: background 0.5s ease, color 0.5s ease;
+        }
+        #container {
+            width: 100vw;
+            height: 100vh;
+            background: var(--bg);
+            position: relative;
+        }
+        #left-sidebar {
+            position: absolute;
+            left: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--panel-bg);
+            backdrop-filter: blur(24px);
+            border-radius: 40px;
+            padding: 36px 18px;
+            box-shadow: 0 16px 48px var(--shadow);
+            z-index: 30;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            border: 1px solid var(--accent);
+        }
+        .sidebar-btn {
+            width: 68px;
+            height: 68px;
+            background: var(--button-bg);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            cursor: pointer;
+            transition: all 0.35s ease;
+        }
+        .sidebar-btn:hover {
+            background: var(--button-hover);
+            transform: scale(1.18);
+            box-shadow: 0 0 20px var(--accent);
+        }
+        #toolbar {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 48px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(24px);
+            border-radius: 40px;
+            padding: 18px 36px;
+            box-shadow: 0 16px 48px var(--shadow);
+            z-index: 30;
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            border: 1px solid var(--accent);
+        }
+        #toolbar button, #toolbar select {
+            background: var(--button-bg);
+            border: none;
+            color: var(--text);
+            padding: 16px 32px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.35s ease;
+            min-width: 170px;
+        }
+        #toolbar button:hover, #toolbar select:hover {
+            background: var(--button-hover);
+            transform: translateY(-6px);
+            box-shadow: 0 12px 36px var(--accent);
+        }
+        #node-palette {
+            position: absolute;
+            right: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--panel-bg);
+            backdrop-filter: blur(24px);
+            border-radius: 32px;
+            padding: 36px 28px;
+            box-shadow: 0 16px 48px var(--shadow);
+            z-index: 30;
+            width: 320px;
+            border: 1px solid var(--accent);
+        }
+        .node-template {
+            background: linear-gradient(135deg, rgba(80,80,200,0.7), rgba(120,120,255,0.9));
+            border-radius: 24px;
+            padding: 20px;
+            margin: 16px 0;
+            cursor: grab;
+            font-size: 17px;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.35s ease;
+            box-shadow: 0 6px 20px var(--shadow);
+        }
+        .node-template:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 36px var(--accent);
+        }
+        #properties {
+            position: absolute;
+            right: 40px;
+            bottom: 48px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(24px);
+            border-radius: 32px;
+            padding: 32px;
+            box-shadow: 0 16px 48px var(--shadow);
+            z-index: 30;
+            width: 380px;
+            max-height: 65vh;
+            overflow-y: auto;
+            border: 1px solid var(--accent);
+            display: none;
+        }
+        #progress {
+            background: rgba(40, 40, 80, 0.6);
+            height: 14px;
+            border-radius: 7px;
+            margin-top: 24px;
+            overflow: hidden;
+        }
+        #progress-bar {
+            background: linear-gradient(90deg, #5e5eff, #a0ff8a);
+            height: 100%;
+            width: 0%;
+            transition: width 0.6s ease;
+        }
+        #context-menu {
+            position: absolute;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            border-radius: 20px;
+            padding: 16px 0;
+            box-shadow: 0 16px 48px var(--shadow);
+            z-index: 100;
+            display: none;
+            border: 1px solid var(--accent);
+            min-width: 220px;
+        }
+        .menu-item {
+            padding: 16px 32px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        .menu-item:hover {
+            background: rgba(120, 120, 255, 0.5);
+        }
+        @media (max-width: 768px) {
+            #left-sidebar, #node-palette, #properties { display: none; }
+            #toolbar { flex-wrap: wrap; gap: 16px; padding: 16px; bottom: 20px; }
+        }
     </style>
 </head>
 <body data-theme="dark">
-    <!-- HTML 结构保持上一版（工具栏增加运行反馈，属性面板增加Key输入和运行按钮） -->
+    <div id="left-sidebar">
+        <div class="sidebar-btn">☜</div>
+        <div class="sidebar-btn">T</div>
+        <div class="sidebar-btn">➕</div>
+        <div class="sidebar-btn">🖼️</div>
+        <div class="sidebar-btn">🎬</div>
+    </div>
+
+    <div id="toolbar">
+        <input type="file" id="scriptUpload" accept=".txt,.docx" style="display:none;">
+        <button onclick="document.getElementById('scriptUpload').click()">📄 上传剧本</button>
+        <button onclick="runWorkflow()">▶️ 一键运行</button>
+        <button onclick="autoLayout()">📐 自动布局</button>
+        <button onclick="saveProject()">💾 保存项目</button>
+        <button onclick="loadProject()">📂 加载项目</button>
+        <select id="theme-switch">
+            <option value="dark">🌙 夜间</option>
+            <option value="light">☀️ 日间</option>
+        </select>
+        <select id="lang-switch">
+            <option value="zh">中文</option>
+            <option value="en">English</option>
+        </select>
+        <div id="progress"><div id="progress-bar"></div></div>
+    </div>
+
+    <div id="node-palette">
+        <h3>节点库（拖拽添加）</h3>
+        <div class="node-template" data-type="script">📄 剧本输入</div>
+        <div class="node-template" data-type="split">✂️ 剧本拆分</div>
+        <div class="node-template" data-type="image">🖼️ 生图节点</div>
+        <div class="node-template" data-type="video">🎬 生视频节点</div>
+        <div class="node-template" data-type="audio">🔊 配音节点</div>
+        <div class="node-template" data-type="export">📤 导出短剧</div>
+    </div>
+
+    <div id="properties">
+        <h3>节点配置</h3>
+        <div id="prop-content">点击节点查看配置</div>
+    </div>
+
+    <div id="context-menu">
+        <div class="menu-item" data-type="script">📄 添加剧本输入</div>
+        <div class="menu-item" data-type="split">✂️ 添加剧本拆分</div>
+        <div class="menu-item" data-type="image">🖼️ 添加生图节点</div>
+        <div class="menu-item" data-type="video">🎬 添加生视频节点</div>
+        <div class="menu-item" data-type="audio">🔊 添加配音节点</div>
+        <div class="menu-item" data-type="export">📤 添加导出节点</div>
+        <hr style="margin:16px 0;border-color:var(--accent);">
+        <div class="menu-item" id="delete-node">🗑️ 删除选中节点</div>
+    </div>
+
+    <div id="container"></div>
 
     <script>
-        // 所有基础逻辑保持上一版（画布、节点创建、动画、连线、删除、主题/语言切换、移动适配、.docx支持）
+        // 页面加载失败保护
+        window.onload = () => {
+            if (!Konva) return alert('Konva加载失败，请检查网络或CDN');
+            initApp();
+        };
 
-        // 新增：真实API调用函数（以Kimi拆分为例，其他节点模拟）
-        async function callKimiAPI(prompt, key) {
-            if (!key) return '请在节点配置中输入Kimi API Key';
-            try {
-                const res = await fetch('https://api.moonshot.cn/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${key}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        model: 'moonshot-v1-8k',
-                        messages: [{ role: 'user', content: prompt }],
-                        temperature: 0.7
-                    })
-                });
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const data = await res.json();
-                return data.choices[0].message.content;
-            } catch (e) {
-                return `调用失败：${e.message}（检查Key或网络）`;
-            }
-        }
+        function initApp() {
+            const stage = new Konva.Stage({ container: 'container', width: window.innerWidth, height: window.innerHeight, draggable: true });
+            const layer = new Konva.Layer();
+            const connectionsLayer = new Konva.Layer();
+            stage.add(connectionsLayer);
+            stage.add(layer);
 
-        // 运行单个节点（核心功能输入）
-        async function runSingleNode() {
-            if (!selectedNode) return alert('请先选中节点');
-            const type = selectedNode.data.type;
-            const cfg = selectedNode.customConfig;
-            selectedNode.data.statusText.text('运行中...');
-            layer.draw();
+            let nodes = [];
+            let selectedNode = null;
 
-            let result = '';
-            if (type === 'split' && selectedNode.data.content) { // 假设上游剧本已加载
-                result = await callKimiAPI(`请将以下剧本拆分成10个分镜，每个包含描述、对白、定帧图像prompt（漫画风格）:\n${selectedNode.data.content}`, cfg.key || prompt('请输入Kimi Key（临时）'));
-            } else if (type === 'image') {
-                result = 'https://via.placeholder.com/1024x1024/333355/ffffff?text=生图结果（真实需Key）';
-            } else if (type === 'video') {
-                result = 'https://via.placeholder.com/1024x576/000000/ffffff?text=视频生成中（真实需Key）';
+            // 基本节点创建（简化测试）
+            function createNode(type, x = 400, y = 300) {
+                const group = new Konva.Group({ x, y, draggable: true });
+                const rect = new Konva.Rect({ width: 280, height: 180, fill: 'rgba(40,40,80,0.95)', cornerRadius: 28, stroke: '#6e6eff', strokeWidth: 3 });
+                group.add(rect);
+                const title = new Konva.Text({ text: type, x: 30, y: 60, fontSize: 22, fill: '#ffffff' });
+                group.add(title);
+                layer.add(group);
+                nodes.push(group);
+                layer.draw();
             }
 
-            // 显示结果（预览图像或文本）
-            const preview = document.createElement('div');
-            if (type === 'image' || type === 'video') {
-                const img = document.createElement('img');
-                img.src = result;
-                img.style.maxWidth = '100%';
-                preview.appendChild(img);
-            } else {
-                preview.textContent = result;
-            }
-            document.getElementById('prop-content').appendChild(preview);
+            // 测试：加载时自动创建一个节点，避免空白
+            createNode('测试节点', window.innerWidth / 2, window.innerHeight / 2);
 
-            selectedNode.data.statusText.text('完成');
-            layer.draw();
+            // 按钮功能（有反馈）
+            window.runWorkflow = () => alert('运行工作流');
+            window.autoLayout = () => alert('自动布局');
+            window.saveProject = () => alert('保存项目');
+            window.loadProject = () => alert('加载项目');
+
+            // 主题/语言切换
+            document.getElementById('theme-switch').onchange = (e) => document.body.dataset.theme = e.target.value;
+            document.getElementById('lang-switch').onchange = (e) => alert('语言切换：' + e.target.value);
+
+            // .docx 测试
+            document.getElementById('scriptUpload').addEventListener('change', () => alert('剧本上传成功'));
+
+            console.log('应用初始化完成');
         }
 
-        // 一键运行工作流（遍历连线执行）
-        function runWorkflow() {
-            document.getElementById('progress-bar').style.width = '60%';
-            setTimeout(() => {
-                alert('工作流执行完成！（实际沿连线传递数据）');
-                document.getElementById('progress-bar').style.width = '100%';
-                setTimeout(() => document.getElementById('progress-bar').style.width = '0%', 1000);
-            }, 2000);
-        }
-
-        // 属性面板增强：在showProperties中添加Key输入和运行按钮
-        function showProperties(node) {
-            // ...保持基础
-            let html = `<label>API Key（此节点独立）</label>
-                        <input type="password" id="node-key" value="${cfg.key}">
-                        <button onclick="saveNodeConfig()">保存Key</button>
-                        <button onclick="runSingleNode()">▶️ 运行此节点（真实调用）</button>`;
-            // ...其他配置
-        }
-
-        // 其余逻辑保持
+        window.addEventListener('resize', () => location.reload()); // 简单resize刷新
     </script>
 </body>
 </html>
