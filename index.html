@@ -1,198 +1,237 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh" data-theme="light">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>AI 漫剧工坊 Flow Pro</title>
-    <script src="https://unpkg.com/konva@9/konva.min.js"></script>
-    <script src="https://unpkg.com/mammoth@1.6.0/mammoth.browser.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        /* 完整样式保持上一版优化（深色/浅色主题、移动适配） */
-        :root {
-            --bg: #000000;
-            --panel-bg: rgba(20, 20, 35, 0.92);
-            --text: #e0e0ff;
-            --accent: rgba(100, 100, 255, 0.25);
-            --button-bg: rgba(50, 50, 100, 0.7);
-            --button-hover: rgba(120, 120, 255, 0.9);
-            --shadow: rgba(0,0,0,0.8);
-        }
-        [data-theme="light"] {
-            --bg: #f5f5f5;
-            --panel-bg: rgba(255, 255, 255, 0.92);
-            --text: #333333;
-            --accent: rgba(100, 100, 255, 0.25);
-            --button-bg: rgba(200, 200, 255, 0.7);
-            --button-hover: rgba(120, 120, 255, 0.9);
-            --shadow: rgba(0,0,0,0.2);
-        }
-        body { margin: 0; font-family: 'Inter', sans-serif; overflow: hidden; background: var(--bg); color: var(--text); transition: all 0.5s ease; }
-        #container { width: 100vw; height: 100vh; background: var(--bg); }
-        /* 左侧、底部、右侧面板样式保持上一版（圆角、毛玻璃、阴影） */
-        /* ... (复制上一版的完整样式代码，避免重复) */
-        #properties pre { background: rgba(0,0,0,0.3); padding: 16px; border-radius: 16px; max-height: 40vh; overflow-y: auto; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Short Drama Workflow - Mac Style</title>
+  <script src="https://unpkg.com/litegraph.js@0.7.12/build/litegraph.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/litegraph.js@0.7.12/styles/litegraph.css">
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --surface: rgba(255,255,255,0.75);
+      --text: #1d1d1f;
+      --border: rgba(0,0,0,0.08);
+      --accent: #007aff;
+      --node-bg: #ffffff;
+      --node-title: #f0f0f0;
+    }
+    [data-theme="dark"] {
+      --bg: #1c1c1e;
+      --surface: rgba(30,30,32,0.85);
+      --text: #f5f5f7;
+      --border: rgba(255,255,255,0.12);
+      --accent: #0a84ff;
+      --node-bg: #2c2c2e;
+      --node-title: #3a3a3c;
+    }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: var(--surface);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 10;
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.4rem;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+    }
+    .controls {
+      display: flex;
+      gap: 12px;
+    }
+    button, input, select {
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+    button.primary { background: var(--accent); color: white; border: none; }
+    #canvas-container {
+      flex: 1;
+      position: relative;
+    }
+    #graph-canvas {
+      width: 100%;
+      height: 100%;
+    }
+    .config-panel {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: var(--surface);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      width: 320px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      z-index: 5;
+      display: none;
+    }
+    .config-panel.show { display: block; }
+    label { display: block; margin: 12px 0 4px; font-size: 0.9rem; font-weight: 500; }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .node-output {
+      margin-top: 8px;
+      padding: 8px;
+      background: rgba(0,0,0,0.03);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+  </style>
 </head>
-<body data-theme="dark">
-    <!-- HTML结构保持上一版 -->
-    <div id="toolbar">
-        <input type="file" id="scriptUpload" accept=".txt,.docx" style="display:none;">
-        <button onclick="document.getElementById('scriptUpload').click()">📄 上传剧本</button>
-        <button onclick="runWorkflow()">▶️ 一键运行</button>
-        <button onclick="autoLayout()">📐 自动布局</button>
-        <button onclick="saveProject()">💾 保存</button>
-        <button onclick="loadProject()">📂 加载</button>
-        <select id="theme-switch">
-            <option value="dark">🌙 夜间</option>
-            <option value="light">☀️ 日间</option>
-        </select>
-        <select id="lang-switch">
-            <option value="zh">中文</option>
-            <option value="en">English</option>
-        </select>
-        <div id="progress"><div id="progress-bar"></div></div>
-    </div>
-    <!-- 其他面板（左侧、节点库、属性、右键菜单）保持上一版 -->
+<body>
 
-    <div id="container"></div>
+<header>
+  <h1>AI Short Drama Canvas</h1>
+  <div class="controls">
+    <button onclick="toggleTheme()">切换深色</button>
+    <button onclick="toggleConfig()">API 配置</button>
+    <button class="primary" onclick="runWorkflow()">执行工作流</button>
+  </div>
+</header>
 
-    <script>
-        // 初始化画布
-        const stage = new Konva.Stage({ container: 'container', width: window.innerWidth, height: window.innerHeight, draggable: true });
-        const layer = new Konva.Layer();
-        const connectionsLayer = new Konva.Layer();
-        stage.add(connectionsLayer);
-        stage.add(layer);
+<div id="canvas-container">
+  <canvas id="graph-canvas"></canvas>
+</div>
 
-        let nodes = [];
-        let selectedNode = null;
+<div id="configPanel" class="config-panel">
+  <h3>API 配置（保存到 localStorage）</h3>
+  <label>OpenAI / Groq / Together API Key</label>
+  <input id="apiKey" type="password" placeholder="sk-... 或 gsk_...">
 
-        // 创建节点（带动画）
-        function createNode(type, x, y) {
-            const group = new Konva.Group({ x, y, draggable: true, scaleX: 0, scaleY: 0 });
-            const rect = new Konva.Rect({ width: 280, height: 180, fill: 'rgba(40,40,80,0.95)', cornerRadius: 28, stroke: '#6e6eff', strokeWidth: 3 });
-            group.add(rect);
-            const title = new Konva.Text({ text: type, x: 30, y: 60, fontSize: 22, fill: '#ffffff' });
-            group.add(title);
-            const status = new Konva.Text({ x: 30, y: 120, fontSize: 16, fill: '#a0ffa0', text: '就绪' });
-            group.add(status);
-            group.data = { type, statusText: status, content: '', customConfig: { key: '' } };
+  <label>图像/视频生成 Base URL (Replicate/Fal/Kling 等)</label>
+  <input id="baseUrl" type="text" placeholder="https://api.replicate.com/v1 或 https://fal.run" value="https://api.openai.com/v1">
 
-            group.on('click', () => {
-                selectedNode = group;
-                showProperties(group);
-            });
+  <label>默认模型 (text-to-image/video)</label>
+  <select id="model">
+    <option value="gpt-4o">GPT-4o (脚本/分镜)</option>
+    <option value="flux-pro">Flux.1 Pro (图像)</option>
+    <option value="kling-1.5">Kling 1.5 / 2.0</option>
+    <option value="veo-3">Veo 3</option>
+    <option value="hailuo-02">Hailuo 02 / MiniMax</option>
+    <option value="custom">自定义模型名</option>
+  </select>
 
-            layer.add(group);
-            nodes.push(group);
+  <label>自定义模型名</label>
+  <input id="customModel" type="text" placeholder="black-forest-labs/flux-pro 等">
 
-            new Konva.Tween({
-                node: group,
-                scaleX: 1,
-                scaleY: 1,
-                duration: 0.5,
-                easing: Konva.Easings.ElasticEaseOut
-            }).play();
+  <button class="primary" style="margin-top:16px;width:100%;" onclick="saveConfig()">保存配置</button>
+</div>
 
-            layer.draw();
-        }
+<script>
+// ==================== LiteGraph 初始化 ====================
+const graph = new LGraph();
+const canvas = new LGraphCanvas("#graph-canvas", graph);
 
-        // 属性面板
-        function showProperties(node) {
-            const cfg = node.customConfig;
-            let html = `<label>节点类型: ${node.data.type}</label>
-                        <label>API Key (此节点独立)</label>
-                        <input type="password" id="node-key" value="${cfg.key}">
-                        <button onclick="saveNodeKey()">保存Key</button>
-                        <button onclick="runSingleNode()">▶️ 运行此节点</button>
-                        <pre id="node-result">结果将显示在这里</pre>`;
-            document.getElementById('prop-content').innerHTML = html;
-            document.getElementById('properties').style.display = 'block';
-        }
+// 主题切换
+function toggleTheme() {
+  const html = document.documentElement;
+  html.dataset.theme = html.dataset.theme === "dark" ? "light" : "dark";
+}
 
-        function saveNodeKey() {
-            if (selectedNode) selectedNode.customConfig.key = document.getElementById('node-key').value;
-        }
+// 配置面板
+function toggleConfig() {
+  document.getElementById("configPanel").classList.toggle("show");
+}
 
-        // 真实运行节点（Kimi拆分示例）
-        async function runSingleNode() {
-            if (!selectedNode) return;
-            const type = selectedNode.data.type;
-            const key = selectedNode.customConfig.key;
-            selectedNode.data.statusText.text('运行中...');
-            layer.draw();
+function saveConfig() {
+  const config = {
+    apiKey: document.getElementById("apiKey").value,
+    baseUrl: document.getElementById("baseUrl").value,
+    model: document.getElementById("model").value,
+    customModel: document.getElementById("customModel").value
+  };
+  localStorage.setItem("aiWorkflowConfig", JSON.stringify(config));
+  alert("配置已保存");
+}
 
-            let result = '';
-            if (type === '剧本拆分' && selectedNode.data.content) {
-                if (!key) result = '请先输入Kimi Key';
-                else {
-                    try {
-                        const res = await fetch('https://api.moonshot.cn/v1/chat/completions', {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                model: 'moonshot-v1-8k',
-                                messages: [{ role: 'user', content: `拆分剧本成分镜并生成定帧prompt:\n${selectedNode.data.content.substring(0,4000)}` }]
-                            })
-                        });
-                        const data = await res.json();
-                        result = data.choices[0].message.content || '调用成功但无返回';
-                    } catch (e) {
-                        result = '错误: ' + e.message;
-                    }
-                }
-            } else {
-                result = '此节点功能模拟完成（真实需更多配置）';
-            }
+// 加载保存的配置
+window.addEventListener("load", () => {
+  const saved = localStorage.getItem("aiWorkflowConfig");
+  if (saved) {
+    const c = JSON.parse(saved);
+    document.getElementById("apiKey").value = c.apiKey || "";
+    document.getElementById("baseUrl").value = c.baseUrl || "https://api.openai.com/v1";
+    document.getElementById("model").value = c.model || "gpt-4o";
+    document.getElementById("customModel").value = c.customModel || "";
+  }
+});
 
-            document.getElementById('node-result').textContent = result;
-            selectedNode.data.statusText.text('完成');
-            layer.draw();
-        }
+// ==================== 自定义节点 ====================
 
-        // 上传剧本真实填充
-        document.getElementById('scriptUpload').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            let text = '';
-            if (file.name.endsWith('.docx')) {
-                const arrayBuffer = await file.arrayBuffer();
-                const result = await mammoth.extractRawText({ arrayBuffer });
-                text = result.value;
-            } else {
-                text = await file.text();
-            }
-            const scriptNode = nodes.find(n => n.data.type === '剧本输入') || createNode('剧本输入', 400, 300);
-            scriptNode.data.content = text;
-            scriptNode.data.statusText.text('剧本已加载');
-            layer.draw();
-            alert('剧本上传成功！长度: ' + text.length + '字符');
-        });
+// 基础文本输入节点（故事大纲 / 剧本）
+class StoryInputNode extends LGraphNode {
+  static title = "故事大纲";
+  constructor() {
+    super();
+    this.addWidget("text", "标题", "我的短剧");
+    this.addWidget("textarea", "大纲", "一个女孩在雨中遇到旧爱，两人重逢却发现彼此都变了...");
+    this.addOutput("text", "string");
+    this.size = [320, 180];
+  }
+  onExecute() {
+    const text = this.widgets[1].value;
+    this.setOutputData(0, text);
+  }
+}
+LiteGraph.registerNodeType("shortdrama/story", StoryInputNode);
 
-        // 其他按钮真实反馈
-        function runWorkflow() {
-            document.getElementById('progress-bar').style.width = '100%';
-            setTimeout(() => {
-                alert('工作流完成！（数据已沿连线传递）');
-                document.getElementById('progress-bar').style.width = '0%';
-            }, 2000);
-        }
+// 分镜生成节点（调用 LLM 拆分镜头）
+class ShotBreakdownNode extends LGraphNode {
+  static title = "分镜拆解";
+  constructor() {
+    super();
+    this.addInput("script", "string");
+    this.addWidget("button", "拆分", null, ()=>{});
+    this.addOutput("shots", "array");
+    this.addOutput("prompts", "array");
+    this.size = [300, 140];
+    this.result = "";
+  }
+  async onExecute() {
+    const script = this.getInputData(0);
+    if (!script) return;
 
-        // 初始化测试节点
-        createNode('测试节点 - 点击我配置', window.innerWidth / 2 - 140, window.innerHeight / 2 - 90);
+    const config = JSON.parse(localStorage.getItem("aiWorkflowConfig") || "{}");
+    if (!config.apiKey) return alert("请先配置 API Key");
 
-        // 主题/语言/缩放等保持
-        document.getElementById('theme-switch').onchange = (e) => document.body.dataset.theme = e.target.value;
+    const model = config.model === "custom" ? config.customModel : config.model;
+    const url = config.baseUrl + (config.baseUrl.endsWith("/") ? "" : "/") + "chat/completions";
 
-        stage.on('wheel', (e) => {
-            e.evt.preventDefault();
-            const scaleBy = 1.08;
-            const oldScale = stage.scaleX();
-            const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
-            stage.scale({ x: newScale, y: newScale });
-            layer.draw();
-        });
-    </script>
-</body>
-</html>
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${config.apiKey}`
+        },
+        body: JSON.stringify({
+          model: model || "gpt-4o",
+          messages: [
+            {role: "system", content: "你是专业短剧导演
