@@ -3,6 +3,487 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 漫剧工坊 Flow Pro</title>
+    <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            background: #000000;
+            color: #e0e0ff;
+        }
+        #container {
+            width: 100vw;
+            height: 100vh;
+            background: #000000;
+            position: relative;
+        }
+        #toolbar {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 24px;
+            background: rgba(20, 20, 35, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 12px 24px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.8);
+            z-index: 30;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border: 1px solid rgba(80, 80, 255, 0.2);
+        }
+        #toolbar button {
+            background: rgba(50, 50, 100, 0.6);
+            border: none;
+            color: #ffffff;
+            padding: 12px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            min-width: 140px;
+        }
+        #toolbar button:hover {
+            background: rgba(100, 100, 255, 0.8);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(100, 100, 255, 0.4);
+        }
+        #toolbar button.active {
+            background: linear-gradient(135deg, #5e5eff, #8a73ff);
+        }
+        #left-sidebar {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(20, 20, 35, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 20px 12px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.8);
+            z-index: 30;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            border: 1px solid rgba(80, 80, 255, 0.2);
+        }
+        .sidebar-btn {
+            width: 56px;
+            height: 56px;
+            background: rgba(50, 50, 100, 0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .sidebar-btn:hover {
+            background: rgba(100, 100, 255, 0.8);
+            transform: scale(1.1);
+        }
+        #properties {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            background: rgba(20, 20, 35, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.8);
+            z-index: 30;
+            width: 320px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid rgba(80, 80, 255, 0.2);
+            display: none;
+        }
+        #properties h3 {
+            margin: 0 0 20px 0;
+            font-size: 1.5em;
+            color: #a0a0ff;
+        }
+        label {
+            display: block;
+            margin: 16px 0 8px;
+            font-size: 14px;
+            color: #b0b0ff;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 14px;
+            border: 1px solid rgba(100, 100, 255, 0.4);
+            background: rgba(40, 40, 80, 0.6);
+            color: #e0e0e0;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #8a8aff;
+            box-shadow: 0 0 16px rgba(138, 138, 255, 0.3);
+        }
+        #progress {
+            background: rgba(40, 40, 80, 0.6);
+            height: 12px;
+            border-radius: 6px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        #progress-bar {
+            background: linear-gradient(90deg, #5e5eff, #a0ff8a);
+            height: 100%;
+            width: 0%;
+            transition: width 0.6s ease;
+        }
+        .node {
+            width: 260px;
+            height: 160px;
+            background: rgba(40, 40, 80, 0.9);
+            border-radius: 24px;
+            border: 2px solid #5e5eff;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+            padding: 20px;
+            color: white;
+            font-weight: 600;
+            text-align: center;
+            position: relative;
+        }
+        .node-title {
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+        .node-status {
+            font-size: 14px;
+            color: #a0ffa0;
+            margin-top: 20px;
+        }
+        .port-in, .port-out {
+            width: 20px;
+            height: 20px;
+            background: #8a8aff;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .port-in { left: -10px; }
+        .port-out { right: -10px; }
+        #context-menu {
+            position: absolute;
+            background: rgba(30, 30, 50, 0.95);
+            backdrop-filter: blur(16px);
+            border-radius: 16px;
+            padding: 12px 0;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.8);
+            z-index: 100;
+            display: none;
+            border: 1px solid rgba(100, 100, 255, 0.3);
+        }
+        .menu-item {
+            padding: 12px 24px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .menu-item:hover {
+            background: rgba(100, 100, 255, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div id="left-sidebar">
+        <div class="sidebar-btn" title="添加节点">➕</div>
+        <div class="sidebar-btn" title="文字">T</div>
+        <div class="sidebar-btn" title="指针">☜</div>
+        <div class="sidebar-btn" title="图片">🖼️</div>
+        <div class="sidebar-btn" title="视频">🎬</div>
+    </div>
+
+    <div id="toolbar">
+        <button onclick="runWorkflow()">▶️ 一键运行工作流</button>
+        <button onclick="autoLayout()">📐 自动布局</button>
+        <button onclick="saveProject()">💾 保存</button>
+        <button onclick="loadProject()">📂 加载</button>
+        <button onclick="toggleGlobalConfig()">⚙️ 全局配置</button>
+        <div id="progress"><div id="progress-bar"></div></div>
+    </div>
+
+    <div id="properties">
+        <h3>节点配置</h3>
+        <div id="prop-content">右键画布添加节点，或点击节点配置</div>
+    </div>
+
+    <div id="context-menu">
+        <div class="menu-item" data-type="script">📄 剧本输入</div>
+        <div class="menu-item" data-type="split">✂️ 剧本拆分（分镜头+定帧提示）</div>
+        <div class="menu-item" data-type="image">🖼️ 生图节点</div>
+        <div class="menu-item" data-type="video">🎬 生视频节点</div>
+        <div class="menu-item" data-type="audio">🔊 配音节点</div>
+        <div class="menu-item" data-type="export">📤 导出短剧</div>
+    </div>
+
+    <div id="container"></div>
+
+    <script>
+        const stage = new Konva.Stage({ container: 'container', width: window.innerWidth, height: window.innerHeight, draggable: true });
+        const layer = new Konva.Layer();
+        const connectionsLayer = new Konva.Layer();
+        stage.add(connectionsLayer);
+        stage.add(layer);
+
+        let nodes = [];
+        let connections = [];
+        let selectedNode = null;
+        let connecting = null;
+        let tempLine = null;
+
+        // 右键菜单
+        const contextMenu = document.getElementById('context-menu');
+        stage.on('contextmenu', (e) => {
+            e.evt.preventDefault();
+            const pointer = stage.getPointerPosition();
+            contextMenu.style.display = 'block';
+            contextMenu.style.left = pointer.x + 'px';
+            contextMenu.style.top = pointer.y + 'px';
+        });
+
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.onclick = () => {
+                const pos = stage.getPointerPosition();
+                createNode(item.dataset.type, pos.x - 130, pos.y - 80);
+                contextMenu.style.display = 'none';
+            };
+        });
+
+        document.addEventListener('click', () => {
+            contextMenu.style.display = 'none';
+        });
+
+        // 创建节点
+        function createNode(type, x = 400, y = 300) {
+            const group = new Konva.Group({ x, y, draggable: true });
+
+            const rect = new Konva.Rect({
+                width: 260,
+                height: 160,
+                fill: 'rgba(40,40,80,0.9)',
+                cornerRadius: 24,
+                stroke: '#5e5eff',
+                strokeWidth: 3,
+                shadowBlur: 30,
+                shadowColor: 'rgba(94,94,255,0.5)'
+            });
+            group.add(rect);
+
+            const title = new Konva.Text({
+                text: {
+                    script: '剧本输入', split: '剧本拆分', image: '生图', video: '生视频', audio: '配音', export: '导出短剧'
+                }[type],
+                x: 20, y: 30, fontSize: 20, fill: '#ffffff', fontStyle: 'bold'
+            });
+            group.add(title);
+
+            const status = new Konva.Text({ x: 20, y: 100, fontSize: 15, fill: '#a0ffa0', text: '就绪' });
+            group.add(status);
+
+            const inPort = new Konva.Circle({ radius: 10, fill: '#8a8aff', className: 'port-in' });
+            const outPort = new Konva.Circle({ radius: 10, fill: '#8a8aff', className: 'port-out' });
+            group.add(inPort, outPort);
+
+            inPort.on('mousedown', () => startConnection(group, 'in'));
+            outPort.on('mousedown', () => startConnection(group, 'out'));
+
+            group.on('dragmove', updateConnections);
+            group.on('click tap', () => showProperties(group));
+
+            group.customConfig = {
+                provider: type === 'split' ? 'kimi' : type === 'image' ? 'nanobanana' : type === 'video' ? 'kling26' : type === 'audio' ? 'elevenlabs' : '',
+                key: '',
+                params: {} // 特定参数，如比例、时长、参考等
+            };
+
+            group.data = { type, statusText: status, content: '' };
+
+            layer.add(group);
+            nodes.push(group);
+            layer.draw();
+            connectionsLayer.draw();
+        }
+
+        // 属性面板（高度定制化）
+        function showProperties(node) {
+            selectedNode = node;
+            const type = node.data.type;
+            const cfg = node.customConfig;
+
+            let html = `<label>节点：${titleMap[type]}</label>`;
+
+            if (type === 'split') {
+                html += `
+                <label>模型</label>
+                <select id="provider">
+                    <option value="deepseek" ${cfg.provider === 'deepseek' ? 'selected' : ''}>DeepSeek 最新</option>
+                    <option value="kimi" ${cfg.provider === 'kimi' ? 'selected' : ''}>Kimi 2.5</option>
+                    <option value="gemini" ${cfg.provider === 'gemini' ? 'selected' : ''}>Gemini 3 Pro</option>
+                    <option value="grok" ${cfg.provider === 'grok' ? 'selected' : ''}>Grok 最新</option>
+                    <option value="gpt" ${cfg.provider === 'gpt' ? 'selected' : ''}>GPT 最新</option>
+                </select>
+                <label>API Key / 账户</label>
+                <input type="password" id="node-key" value="${cfg.key}">
+                <label>额外提示（分镜头数量等）</label>
+                <textarea id="extra-prompt">${cfg.params.extra || ''}</textarea>
+                `;
+            } else if (type === 'image') {
+                html += `
+                <label>模型</label>
+                <select id="provider">
+                    <option value="nanobanana" ${cfg.provider === 'nanobanana' ? 'selected' : ''}>NanoBananaPro</option>
+                    <option value="midjourney" ${cfg.provider === 'midjourney' ? 'selected' : ''}>Midjourney V7 / Niji V7</option>
+                    <option value="seedream" ${cfg.provider === 'seedream' ? 'selected' : ''}>Seedream 4.5</option>
+                    <option value="grok-image" ${cfg.provider === 'grok-image' ? 'selected' : ''}>Grok 最新生图</option>
+                </select>
+                <label>API Key / Discord账户</label>
+                <input type="password" id="node-key" value="${cfg.key}">
+                <label>比例</label>
+                <select id="aspect">
+                    <option>1:1</option>
+                    <option>16:9</option>
+                    <option>9:16</option>
+                    <option>自定义</option>
+                </select>
+                <label>自定义比例 (width:height)</label>
+                <input id="custom-aspect" placeholder="1024:1024">
+                <label>清晰度</label>
+                <select id="resolution">
+                    <option>1K</option>
+                    <option>2K</option>
+                    <option>4K</option>
+                </select>
+                <label>生成数量</label>
+                <select id="count">
+                    <option>1</option>
+                    <option>2</option>
+                    <option>3</option>
+                    <option>4</option>
+                </select>
+                `;
+            } else if (type === 'video') {
+                html += `
+                <label>模型</label>
+                <select id="provider">
+                    <option value="kling26" ${cfg.provider === 'kling26' ? 'selected' : ''}>可灵 2.6 (10s, 音画同步)</option>
+                    <option value="klingo1" ${cfg.provider === 'klingo1' ? 'selected' : ''}>可灵 O1 (自然编辑, 多模态参考)</option>
+                    <option value="wan26" ${cfg.provider === 'wan26' ? 'selected' : ''}>Wan 2.6 (15s, 多机位)</option>
+                    <option value="jimeng" ${cfg.provider === 'jimeng' ? 'selected' : ''}>即梦 3.5 Pro (12s, 多机位)</option>
+                    <option value="vidu" ${cfg.provider === 'vidu' ? 'selected' : ''}>Vidu Q2 (8s, 多图参考)</option>
+                    <option value="grok-video" ${cfg.provider === 'grok-video' ? 'selected' : ''}>Grok 最新视频</option>
+                    <option value="veo" ${cfg.provider === 'veo' ? 'selected' : ''}>Veo 3.1</option>
+                    <option value="sora" ${cfg.provider === 'sora' ? 'selected' : ''}>Sora 2</option>
+                </select>
+                <label>API Key</label>
+                <input type="password" id="node-key" value="${cfg.key}">
+                <label>模式</label>
+                <select id="mode">
+                    <option>文生视频</option>
+                    <option>图生视频</option>
+                    <option>首尾帧</option>
+                    <option>多帧参考</option>
+                </select>
+                <label>时长 (秒)</label>
+                <input type="number" id="duration" value="10">
+                <label>启用音画同步</label>
+                <input type="checkbox" id="lip-sync" ${cfg.params.lipSync ? 'checked' : ''}>
+                <label>多机位镜头</label>
+                <input type="checkbox" id="multi-camera" ${cfg.params.multiCamera ? 'checked' : ''}>
+                `;
+            } else if (type === 'audio') {
+                html += `
+                <label>模型</label>
+                <select id="provider">
+                    <option value="minimax">Minimax</option>
+                    <option value="elevenlabs">ElevenLabs</option>
+                    <option value="ttsmaker">TTSMaker</option>
+                </select>
+                <label>API Key</label>
+                <input type="password" id="node-key" value="${cfg.key}">
+                `;
+            }
+
+            html += `<button onclick="saveNodeConfig()">保存配置</button>
+                     <button onclick="runSingleNode()">运行此节点</button>`;
+
+            document.getElementById('prop-content').innerHTML = html;
+            document.getElementById('properties').style.display = 'block';
+        }
+
+        // 保存节点配置（简化）
+        function saveNodeConfig() {
+            if (!selectedNode) return;
+            const cfg = selectedNode.customConfig;
+            cfg.provider = document.getElementById('provider')?.value || cfg.provider;
+            cfg.key = document.getElementById('node-key')?.value || '';
+            // 保存其他参数到 cfg.params
+            alert('节点配置已保存');
+        }
+
+        // 连线逻辑（完善）
+        function startConnection(node, dir) {
+            connecting = { node, dir };
+            stage.on('mousemove', drawTempLine);
+            stage.on('mouseup', endConnection);
+        }
+
+        function drawTempLine(e) {
+            if (!tempLine) {
+                tempLine = new Konva.Arrow({ stroke: '#8a8aff', strokeWidth: 5, pointerLength: 15, pointerWidth: 15 });
+                connectionsLayer.add(tempLine);
+            }
+            const pos = stage.getPointerPosition();
+            const start = connecting.node.absolutePosition();
+            const sx = connecting.dir === 'out' ? start.x + 260 : start.x;
+            tempLine.points([sx, start.y + 80, pos.x, pos.y]);
+            connectionsLayer.draw();
+        }
+
+        function endConnection() {
+            if (tempLine) tempLine.destroy();
+            stage.off('mousemove mouseup');
+            connecting = null;
+        }
+
+        // 其他函数占位
+        function runWorkflow() { alert('工作流运行中...数据将沿连线自动传递'); }
+        function autoLayout() { /* 自动排列节点 */ }
+        function saveProject() { alert('保存项目'); }
+        function loadProject() { alert('加载项目'); }
+
+        // 缩放
+        stage.on('wheel', (e) => {
+            e.evt.preventDefault();
+            const scaleBy = 1.08;
+            const oldScale = stage.scaleX();
+            const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+            stage.scale({ x: newScale, y: newScale });
+            layer.draw();
+            connectionsLayer.draw();
+        });
+
+        window.addEventListener('resize', () => {
+            stage.width(window.innerWidth);
+            stage.height(window.innerHeight);
+        });
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 漫剧工坊 Flow</title>
     <script src="https://unpkg.com/konva@9/konva.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
